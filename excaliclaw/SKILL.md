@@ -1,6 +1,6 @@
 ---
 name: excaliclaw
-version: 1.0.1
+version: 1.0.2
 description: Create reliable Excalidraw diagrams in OpenClaw using the Excalidraw MCP, with export-safe labels, Excalifont text, and clear system-diagram structure. Use when the user asks for an Excalidraw diagram, architecture diagram, system diagram, flowchart, or hand-drawn diagram.
 user-invocable: true
 argument-hint: "[diagram topic]"
@@ -13,8 +13,6 @@ Create diagrams with the Excalidraw MCP in a way that survives OpenClaw renderin
 ## Core Rule
 
 Use real Excalidraw elements, but do **not** rely on MCP `label` shortcuts for final diagrams.
-
-This skill overrides Excalidraw MCP helper docs if they recommend `label` shortcuts. The shortcut can render in preview but drop labels in exported Excalidraw links. For deliverables, every visible label must be a real `text` element, either container-bound or visually placed.
 
 ## MCP Availability Preflight
 
@@ -33,18 +31,33 @@ Do not silently auto-install the MCP just because a diagram was requested. Insta
 
 Reliable pattern:
 
+Mandatory workflow for normal diagram requests:
+
+1. Use `excalidraw__create_view` to render the diagram preview first as an internal quality gate. Do not skip the preview and jump straight to export unless the user explicitly asks for JSON-only or link-only output.
+2. Treat the editable excalidraw.com link as the normal user-facing deliverable for Excalidraw diagram requests. Include it by default after a successful export.
+3. Build the export from the same full native Excalidraw scene represented by the preview, not a simplified redraw, not a raw MCP streaming array, and not a different diagram.
+4. If `create_view` returns a checkpoint id, treat it as evidence of the previewed scene. Preserve the same elements and relationships when constructing the export payload.
+5. Export only a full Excalidraw scene object, never a bare element array. The exporter payload must be serialized JSON with `type: "excalidraw"`, `version`, `source`, `elements`, `appState`, and `files`.
+6. Verify the exported link before replying. If the link cannot be verified as non-empty, do not deliver it as the final artifact.
+7. On export failure, timeout, or blank-link verification, retry the same full scene once before simplifying. If simplification is necessary, say clearly that the exported link is a simplified fallback.
+8. If a non-empty editable link still cannot be produced, do not deliver a fallback artifact. Tell the user plainly that the excalidraw.com share link failed verification, keep the inline MCP preview as diagnostic evidence only, and ask whether they want another export attempt or a different format.
+9. Do not silently change tool strategy just because one export attempt failed; the known-good path is preview first, then clean full-scene export link, then verified fallback if needed.
+
+Element construction pattern:
+
 1. Draw the shape first.
-2. Draw a separate explicit `text` element for the label. Never use shape/arrow `label` shortcut fields in deliverables.
-3. Bind box labels to their shapes using Excalidraw container text fields (`containerId` on the text + matching `{ "type": "text", "id": ... }` in the shape's `boundElements`) when that survives preview and export.
-4. If bound container text is unreliable, use standalone visually placed `text` elements. Do not switch to `label` shortcuts as a fallback.
-5. Bind arrows based on meaning, not just appearance: if the arrow means “this step talks to that specific step/box,” bind it with `startBinding` and `endBinding`; route around labels if needed. Do **not** bind arrows that merely point into a lane, group, or general area without targeting a specific box.
-6. For every bound arrow, include reciprocal `{ "type": "arrow", "id": ... }` entries in both connected shapes' `boundElements`.
+2. Draw a separate explicit `text` element for the label.
+3. Bind box labels to their shapes using Excalidraw container text fields (`containerId` on the text + matching `{ "type": "text", "id": ... }` in the shape's `boundElements`). This is mandatory for editable box labels unless preview/export proves it broken.
+4. Bind arrows based on meaning, not just appearance: if the arrow means “this step talks to that specific step/box,” bind it with `startBinding` and `endBinding`; route around labels if needed. Do **not** bind arrows that merely point into a lane, group, or general area without targeting a specific box.
+5. For every bound arrow, include reciprocal `{ "type": "arrow", "id": ... }` entries in both connected shapes' `boundElements`.
+6. Do not downgrade semantic box-to-box arrows to loose visual arrows for speed, token pressure, or because MCP `read_me` examples use simpler arrows. If an arrow would be expected to follow a box when moved, it must be bound in both preview and export.
 7. Set `fontFamily: 1` on every text element to use Excalidraw's hand-drawn Excalifont.
-8. Include `width` and `height` on every text element.
-9. Put text elements after their shapes in draw order.
-10. Label major boxes and important arrows unless the user explicitly wants an unlabeled or abstract diagram.
-11. Export/share only after checking that labels rendered correctly in the MCP preview and in the exported Excalidraw link.
-12. Before exporting, verify that the export JSON contains explicit `text` elements for every visible label. If using editable labels, also verify `containerId`, shape `boundElements`, and arrow `startBinding`/`endBinding`. Do not flatten connected arrows accidentally, but visible labels are more important than editability.
+7. Include `width` and `height` on every text element.
+8. Put text elements after their shapes in draw order.
+9. Label major boxes and important arrows unless the user explicitly wants an unlabeled or abstract diagram.
+10. Export/share only after checking that labels rendered correctly in the MCP preview.
+11. Before exporting, verify that the export JSON still contains `containerId`, shape `boundElements`, and arrow `startBinding`/`endBinding`. Do not flatten bound labels or connected arrows into loose visual text/lines during export.
+12. If the delivered diagram is intended to be editable, perform an explicit arrow-editability audit: every semantic box-to-box connector must have `startBinding`, `endBinding`, and matching reciprocal arrow entries in both endpoint shapes' `boundElements`.
 
 ## Recommended Element Recipe
 
@@ -87,7 +100,7 @@ Best default for editable diagrams: bind the text to the rectangle so Excalidraw
 
 If bound container text fails in MCP preview or export, fall back to the same explicit text element without `containerId`/`boundElements`. Keep the label visually centered, but tell the user it may not move with the box. Do not silently fall back.
 
-Avoid this shortcut for final deliverables, including export payloads:
+Avoid this shortcut for final deliverables:
 
 ```json
 {
@@ -97,9 +110,7 @@ Avoid this shortcut for final deliverables, including export payloads:
 }
 ```
 
-The `label` shortcut may look convenient, but it has proven flaky in OpenClaw/Excalidraw MCP export paths. Do not use shortcut labels in either preview or export payloads for final deliverables; exported diagrams can appear correct in preview while opening with missing labels on excalidraw.com.
-
-If an export needs maximum reliability, prefer standalone explicit `text` elements over shortcut labels, even if that means labels are visually placed instead of container-bound. Accuracy of visible labels beats editability.
+The `label` shortcut may look convenient, but it has proven flaky in OpenClaw/Excalidraw MCP export paths. Do not use shortcut labels in either preview or export payloads for final deliverables; otherwise exported diagrams can appear correct while losing editability.
 
 ### Connected arrow
 
@@ -109,6 +120,7 @@ For arrow binding to survive editing/export, include both sides of the relations
 
 - The arrow has `startBinding` and `endBinding` with the connected shape IDs.
 - Each connected shape has a matching `boundElements` entry for the arrow.
+- The arrow endpoint coordinates should land on or very near the connected shapes' edges. Do not rely on bindings alone while leaving arrow geometry floating in whitespace.
 
 Prefer simple straight bound arrows first. Avoid multi-segment/elbow bound arrows unless you verify they render and remain editable correctly; they can look warped or appear unbound in Excalidraw exports. If labels or spacing make the connection awkward, fix the layout by moving boxes/labels before adding complex arrow routing.
 
@@ -197,7 +209,9 @@ Prefer a bound arrow plus a separate text element near the arrow:
 ]
 ```
 
-If arrow binding fails in MCP preview or export, fall back to visually positioned arrows and tell the user they may need to reconnect arrows manually.
+If arrow binding fails in MCP preview or export, fall back to visually positioned arrows and tell the user they may need to reconnect arrows manually. This is an explicit fallback, not a silent simplification.
+
+Regression guard: after a diagram looks visually correct, still inspect the generated/export JSON for every semantic connector. A beautiful render is not enough; if moving either connected box would leave the arrow behind, the diagram failed the editability requirement.
 
 Use visually positioned arrows, not bindings, when:
 
@@ -226,36 +240,53 @@ Before exporting/delivering:
 - Title is visible.
 - Every major element has visible text.
 - Important connections have visible labels.
-- No shape, arrow, or other element uses the shortcut `label` field in the final preview or export payload.
-- Every visible label is represented by an explicit `text` element.
 - Text uses `fontFamily: 1`.
 - Text has `width` and `height`.
-- Box labels use `containerId` + matching shape `boundElements` when reliable; if not, standalone visually placed text is acceptable.
-- Arrows that semantically connect two specific boxes use `startBinding` and `endBinding` with the correct shape IDs when reliable; if not, visually positioned arrows are acceptable.
-- Connected boxes include reciprocal `boundElements` entries for their connected arrows when arrows are bound.
-- Export payload preserves explicit text labels. If using editable labels/arrows, also preserve `containerId`, `boundElements`, `startBinding`, and `endBinding` fields.
+- Box labels use `containerId` + matching shape `boundElements`; if not, the final answer explicitly says labels are visually placed only.
+- Arrows that semantically connect two specific boxes use `startBinding` and `endBinding` with the correct shape IDs; if not, the final answer explicitly says arrows are visually placed only.
+- Connected boxes include reciprocal `boundElements` entries for their connected arrows.
+- Export payload preserves those same `containerId`, `boundElements`, `startBinding`, and `endBinding` fields; do not convert editable relationships into loose shapes during export.
 - Prefer straight bound arrows; only use elbow/multi-point bound arrows after preview/export verification.
 - Arrows that only point into lanes, groups, labels, whitespace, or general regions remain visually positioned and unbound.
 - Text appears after its shape in element order.
 - No text overlaps other text, arrows, or important shapes.
 - Arrows avoid crossing through text, labels, or important content wherever possible.
 - The MCP preview shows labels before exporting.
-- The exported Excalidraw link opens a non-empty diagram and shows all labels.
+- The export payload contains no `cameraUpdate`, `delete`, `restoreCheckpoint`, or other MCP-only pseudo-elements.
+- The export payload preserves native editability metadata: box-label `containerId`/`boundElements` and arrow `startBinding`/`endBinding` where present in the preview.
+- The exported Excalidraw link has been verified as non-empty before being delivered.
+- If the exported link cannot be verified, the reply does not present it as the final artifact and does not include a fallback artifact unless the user explicitly asks for one.
 - The exported Excalidraw link is included if requested or expected.
 
+## Preview vs Export Rule
+
+Preview and export are different artifacts:
+
+- Preview payloads may use `cameraUpdate` to guide the OpenClaw live canvas and verify readability.
+- Export payloads must be clean native Excalidraw scenes intended for excalidraw.com.
+- Clean export means removing MCP-only pseudo-elements, not flattening or stripping Excalidraw editability metadata.
+- Preserve valid native Excalidraw metadata in exports: container text (`containerId` + matching shape `boundElements`) and bound arrows (`startBinding`/`endBinding` + reciprocal shape `boundElements`).
+- The preview is mostly an internal quality gate; the editable Excalidraw link is the normal deliverable.
+
 ## Final Export Payload Rule
+
+**Critical export criterion:** never include `cameraUpdate` or any other MCP-only pseudo-element in an excalidraw.com export payload.
 
 `cameraUpdate` is only stage direction for the OpenClaw live preview. It is not a real Excalidraw scene element.
 
 When exporting to excalidraw.com:
 
+0. Start from the already-previewed diagram whenever possible. The expected sequence is `create_view` -> inspect/preserve the preview scene -> `export_to_excalidraw` with a full native scene object.
 1. Strip all `cameraUpdate`, `delete`, `restoreCheckpoint`, and other MCP-only pseudo-elements.
-2. **Do not pass the raw element array to `export_to_excalidraw`.** `create_view` takes an array, but the exporter needs a serialized full scene object.
-3. Export a real Excalidraw scene payload with `type`, `version`, `source`, `elements`, `appState`, and `files`.
+2. Do **not** strip native Excalidraw editability fields such as `containerId`, shape `boundElements`, arrow `startBinding`, arrow `endBinding`, `groupIds`, or arrow labels.
+3. **Do not pass the raw element array to `export_to_excalidraw`.** `create_view` takes an array, but the exporter needs a serialized full scene object.
+4. Export a real Excalidraw scene payload with `type`, `version`, `source`, `elements`, `appState`, and `files`.
 4. Ensure `elements` is non-empty and contains actual shapes/arrows/text, not only preview/camera metadata.
-5. Ensure the export payload contains no `label` shortcut fields. Convert all shortcut labels into explicit `text` elements before export.
-6. If the first share link opens empty or loses labels, regenerate the export from the full scene object using explicit text elements before replying.
-7. Do not deliver an empty, camera-only, raw-array, or partially unlabeled export link.
+5. After export, verify the share link before replying. Use the browser when available, or another concrete inspection path that proves the link contains non-empty scene data. Do not rely on the exporter returning a URL as proof.
+6. If the first share link opens empty or export times out, regenerate the export from the same full scene object before replying.
+7. Do not deliver an empty, camera-only, raw-array, or unrelated simplified export link.
+8. If you must simplify to recover from repeated export failures, disclose that the link is a simplified fallback and keep the inline preview as the source of truth.
+9. If verification still fails, do not provide any fallback artifact by default. Say the export failed verification and ask whether the user wants another attempt or a different requested format. No fallback is better than surprising the user with an artifact they did not ask for.
 
 Minimal export shape:
 
@@ -271,6 +302,10 @@ Minimal export shape:
   "files": {}
 }
 ```
+
+## Memory & User Preference Guidance
+
+If a user states a durable Excalidraw preference, such as always wanting editable links with diagram replies, update the appropriate OpenClaw memory using the workspace memory policy. Keep it concise and preference-focused; do not store one-off diagram details or broken-export noise.
 
 ## Artifact Progression Guidance
 
