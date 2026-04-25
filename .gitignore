@@ -1,0 +1,12 @@
+node_modules/
+
+.claude/settings.local.json
+
+.DS_Store
+
+.vscode/
+.idea/
+*.swp
+
+.env
+.env.local
