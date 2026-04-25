@@ -1,6 +1,6 @@
 # skills
 
-My personal Claude Code / OpenClaw skills.
+My personal agent skills.
 
 ## Skills
 
