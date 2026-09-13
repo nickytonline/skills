@@ -7,6 +7,7 @@ My personal agent skills.
 | Skill | Description |
 |-------|-------------|
 | [excaliclaw](excaliclaw/SKILL.md) | Create reliable Excalidraw diagrams via the Excalidraw MCP, with export-safe labels, Excalifont text, and clear system-diagram structure. |
+| [mergiraf-first](mergiraf-first/SKILL.md) | Resolve Git conflicts with Mergiraf as a deterministic first pass, then use agent reasoning only for conflicts that remain. |
 
 ## Usage
 
