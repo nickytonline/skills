@@ -10,11 +10,14 @@ fi
 if command -v brew >/dev/null 2>&1; then
   echo "Installing mergiraf with Homebrew..."
   brew install mergiraf
+elif command -v scoop >/dev/null 2>&1; then
+  echo "Installing mergiraf with Scoop..."
+  scoop install mergiraf
 elif command -v cargo >/dev/null 2>&1; then
   echo "Installing mergiraf with Cargo..."
   cargo install mergiraf
 else
-  echo "Unable to install mergiraf automatically: neither Homebrew nor Cargo is available." >&2
+  echo "Unable to install mergiraf automatically: Homebrew, Scoop, and Cargo are not available." >&2
   echo "See https://mergiraf.org/ for installation options." >&2
   exit 1
 fi
