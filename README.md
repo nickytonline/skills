@@ -6,7 +6,7 @@ My personal agent skills.
 
 | Skill | Description |
 |-------|-------------|
-| [clip-to-social](clip-to-social/SKILL.md) | Turn video clip transcripts into concise X/Twitter, LinkedIn, and YouTube Short promotional copy. |
+| [clip-to-social](clip-to-social/SKILL.md) | Turn video clip transcripts into concise X/Twitter, LinkedIn, YouTube Short, and TikTok promotional copy. |
 | [excaliclaw](excaliclaw/SKILL.md) | Create reliable Excalidraw diagrams via the Excalidraw MCP, with export-safe labels, Excalifont text, and clear system-diagram structure. |
 | [mergiraf](mergiraf/SKILL.md) | Resolve Git conflicts with Mergiraf as a deterministic first pass, then use agent reasoning only for conflicts that remain. |
 
