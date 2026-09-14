@@ -4,6 +4,19 @@ This repo contains personal Claude Code skills. Each skill lives in its own subd
 
 ## Available skills
 
+### clip-to-social
+
+**OpenClaw:** triggers automatically when turning video transcripts or clip excerpts into social posts
+**Claude Code:** `/clip-to-social [transcript or clip excerpt]`
+
+Creates ready-to-paste copy for X/Twitter, LinkedIn, and YouTube Shorts. Key behaviors:
+
+- Extracts one strong idea instead of summarizing the transcript chronologically.
+- Caps X/Twitter posts at 280 characters and never adds hashtags.
+- Keeps LinkedIn posts to at most two paragraphs and reuses the X copy when it already works.
+- Produces a concise YouTube Short title and caption, with hashtags when requested.
+- Preserves uncertainty and avoids hardening rough transcript estimates into factual claims.
+
 ### excaliclaw
 
 **OpenClaw:** triggers automatically on diagram requests, e.g. `architecture diagram of my API`
