@@ -1,7 +1,7 @@
 ---
 name: clip-to-social
-version: 1.0.0
-description: Turn a video clip transcript into concise X/Twitter, LinkedIn, and YouTube Short promotional copy. Use when the user shares a transcript or clip excerpt and asks for social posts, captions, or a Short title.
+version: 1.1.0
+description: Turn a video clip transcript into concise X/Twitter, LinkedIn, YouTube Short, and TikTok promotional copy. Use when the user shares a transcript or clip excerpt and asks for social posts, captions, or a short-form video title.
 user-invocable: true
 argument-hint: "[transcript or clip excerpt]"
 ---
@@ -16,7 +16,7 @@ Turn a rough video transcript into platform-ready social copy without flattening
 2. Identify the clip's strongest single idea. Prefer the sharpest useful takeaway over a chronological summary.
 3. Preserve the speaker's level of certainty. Do not turn estimates, speculation, or phrases such as "something like that" into precise factual claims.
 4. Generalize named products or vendors when the idea is broader than the specific example. Keep the name when it is essential to understanding the clip.
-5. Draft only the platforms the user requests. When the request names no platforms, produce X/Twitter, LinkedIn, and YouTube Short copy.
+5. Draft only the platforms the user requests. When the request names no platforms, produce X/Twitter, LinkedIn, YouTube Short, and TikTok copy.
 6. Validate every platform constraint before returning the drafts.
 
 ## Platform Rules
@@ -33,14 +33,21 @@ Turn a rough video transcript into platform-ready social copy without flattening
 
 - Use no more than two paragraphs, including any hashtag line.
 - The first paragraph should carry the idea. Use the second only when it adds useful context, a conclusion, or hashtags.
-- Reuse the X/Twitter post verbatim when it already communicates the point well. Do not lengthen it merely because LinkedIn permits more text.
-- When the user requests hashtags, add a small relevant set at the end of the second paragraph. Avoid hashtag stuffing.
+- Reuse the X/Twitter body when it already communicates the point well. Do not lengthen it merely because LinkedIn permits more text.
+- Add a small set of relevant hashtags at the end of the second paragraph unless the user explicitly requests no hashtags. Avoid hashtag stuffing.
 
 ### YouTube Short
 
 - Provide a concise, accurate title followed by a short description or caption.
 - Make the title specific and interesting without clickbait or claims the transcript cannot support.
-- When the user requests hashtags, add a small relevant set, including `#Shorts`.
+- End the title with the exact suffix ` #shorts`.
+- Add a small set of relevant hashtags to the description unless the user explicitly requests no hashtags. Avoid repeating `#shorts` in the description when it is already in the title.
+
+### TikTok
+
+- Provide one concise caption built around the clip's strongest idea or hook.
+- Add a small set of relevant hashtags unless the user explicitly requests no hashtags. Avoid generic or unrelated trending hashtags.
+- Keep the caption accurate to the transcript and avoid clickbait the clip cannot support.
 
 ## Writing Style
 
@@ -53,6 +60,6 @@ Turn a rough video transcript into platform-ready social copy without flattening
 
 ## Output
 
-Label each requested platform clearly and present complete, ready-to-paste copy. Put the X/Twitter character count in its heading, not inside the post. Include the YouTube Short title separately from its description.
+Label each requested platform clearly and present complete, ready-to-paste copy. Put the X/Twitter character count in its heading, not inside the post. Include the YouTube Short title separately from its description and include the complete TikTok caption under its own heading.
 
 If the same copy works for X/Twitter and LinkedIn, say so and reuse it rather than manufacturing variation.
