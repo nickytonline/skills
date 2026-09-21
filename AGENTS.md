@@ -4,6 +4,18 @@ This repo contains personal Claude Code skills. Each skill lives in its own subd
 
 ## Available skills
 
+### browser-testing
+
+**OpenClaw:** triggers automatically for frontend browser testing and debugging
+**Claude Code:** `/browser-testing [page or behavior to verify]`
+
+Tests web interfaces without flooding the model context. Key behaviors:
+
+- Uses Playwright MCP for navigation, interaction, responsive checks, accessibility state, and focused screenshots.
+- Escalates to Chrome DevTools only for network internals, runtime state, computed styles, console diagnostics, or performance traces.
+- Forbids full DOM and HTML dumps, repeated broad snapshots, and unnecessary screenshots.
+- Requires narrow, filtered DevTools output and returns to Playwright for final user-flow verification.
+
 ### clip-to-social
 
 **OpenClaw:** triggers automatically when turning video transcripts or clip excerpts into social posts
