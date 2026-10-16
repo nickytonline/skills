@@ -8,6 +8,7 @@ My personal agent skills.
 |-------|-------------|
 | [browser-testing](browser-testing/SKILL.md) | Verify web interfaces with Playwright MCP by default and escalate to Chrome DevTools only for low-level browser diagnostics. |
 | [clip-to-social](clip-to-social/SKILL.md) | Turn video clip transcripts into concise X/Twitter, LinkedIn, YouTube Short, and TikTok promotional copy. |
+| [droplet-bootstrap](droplet-bootstrap/SKILL.md) | Bootstrap a fresh DigitalOcean droplet or Ubuntu/Debian VM for demos: a demo user with passwordless sudo, the GitHub CLI, Node.js LTS via mise, and k3s or Docker + Compose. |
 | [excaliclaw](excaliclaw/SKILL.md) | Create reliable Excalidraw diagrams via the Excalidraw MCP, with export-safe labels, Excalifont text, and clear system-diagram structure. |
 | [mergiraf](mergiraf/SKILL.md) | Resolve Git conflicts with Mergiraf as a deterministic first pass, then use agent reasoning only for conflicts that remain. |
 
