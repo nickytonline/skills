@@ -39,7 +39,7 @@ Prepares a fresh DigitalOcean droplet (or any Ubuntu/Debian VM) for demos, run a
 
 - Asks which runtime to install (k3s, Docker + Compose, both, or neither) unless already specified.
 - Creates a demo user (default `demo`) with a home directory, passwordless sudo, and root's SSH authorized_keys.
-- Always installs the GitHub CLI without logging in.
+- Always installs the GitHub CLI (without logging in), plus mise and Node.js LTS for the demo user (Go and other tools via `MISE_TOOLS`), so `npm i -g` needs no sudo.
 - Installs k3s only if no Kubernetes is already present, then sets up the demo user's kubeconfig and a `k` alias.
 - Is idempotent, so it can be rerun to add a runtime later.
 - Intended for disposable demo VMs only, not production servers.

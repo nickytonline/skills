@@ -3,7 +3,8 @@
 #
 #   1. Creates a demo user (default: "demo") with a home directory,
 #      passwordless sudo, and root's SSH authorized_keys.
-#   2. Installs the GitHub CLI (gh), regardless of runtime.
+#   2. Installs the GitHub CLI (gh), and mise + Node.js LTS (plus any other
+#      MISE_TOOLS) for the demo user, regardless of runtime.
 #   3. Installs the chosen container runtime:
 #        k3s    — k3s, only if no Kubernetes is already present (default)
 #        docker — Docker Engine + Docker Compose plugin
@@ -21,6 +22,8 @@ DEMO_USER="demo"
 RUNTIME="k3s"
 COPY_SSH_KEYS=1
 K3S_VERSION="${K3S_VERSION:-}"   # empty = k3s stable channel
+MISE_TOOLS="${MISE_TOOLS:-node@lts}"   # space-separated, e.g. "node@lts go@latest"
+MISE_VERSION="${MISE_VERSION:-}"       # empty = installer's latest vetted release
 
 log()  { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33mWARN:\033[0m %s\n' "$*" >&2; }
@@ -29,6 +32,8 @@ die()  { printf '\033[1;31mERROR:\033[0m %s\n' "$*" >&2; exit 1; }
 usage() {
   echo "Usage: bootstrap.sh [--user NAME] [--runtime k3s|docker|both|none] [--no-ssh-keys]"
   echo "  env K3S_VERSION=v1.xx.y+k3s1 pins the k3s version (default: stable channel)"
+  echo "  env MISE_TOOLS=\"node@lts go@latest\" picks the mise tools for the demo user (default: node@lts)"
+  echo "  env MISE_VERSION=vYYYY.M.N pins the mise release"
   exit "${1:-0}"
 }
 
@@ -47,6 +52,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 [[ $EUID -eq 0 ]] || die "must run as root (try: sudo $0)"
+[[ "$MISE_TOOLS" =~ ^[A-Za-z0-9@.:/_\ -]+$ ]] || die "invalid MISE_TOOLS: $MISE_TOOLS"
+[[ -z "$MISE_VERSION" || "$MISE_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "invalid MISE_VERSION: $MISE_VERSION"
 [[ "$DEMO_USER" =~ ^[a-z_][a-z0-9_-]{0,31}$ ]] || die "invalid username: $DEMO_USER"
 case "$RUNTIME" in k3s|docker|both|none) ;; *) die "invalid --runtime: $RUNTIME (k3s|docker|both|none)" ;; esac
 
@@ -129,6 +136,34 @@ else
   log "installing GitHub CLI"
   apt_install gh
 fi
+
+# --------------------------------------------------------------------------
+# 2b. mise + Node.js (always), installed for the demo user, not system-wide.
+#     Tools live in the user's home, so `npm i -g` / `go install` need no sudo.
+# --------------------------------------------------------------------------
+as_demo() { su - "$DEMO_USER" -c "$1"; }
+MISE_BIN="$DEMO_HOME/.local/bin/mise"
+
+if [[ -x "$MISE_BIN" ]]; then
+  log "mise already installed for '$DEMO_USER' ($(as_demo "$MISE_BIN --version" 2>/dev/null))"
+else
+  command -v curl &>/dev/null || { log "installing curl"; apt_install curl; }
+  log "installing mise${MISE_VERSION:+ $MISE_VERSION} for '$DEMO_USER'"
+  as_demo "curl -fsSL https://mise.run | MISE_QUIET=1 MISE_VERSION='$MISE_VERSION' sh" >/dev/null
+fi
+
+# Interactive shells get `mise activate`; login shells also get the shims on PATH.
+if ! grep -q '# droplet-bootstrap: mise' "$DEMO_HOME/.bashrc" 2>/dev/null; then
+  printf '\n# droplet-bootstrap: mise\neval "$(~/.local/bin/mise activate bash)"\n' >> "$DEMO_HOME/.bashrc"
+  chown "$DEMO_USER:$DEMO_GROUP" "$DEMO_HOME/.bashrc"
+fi
+if ! grep -q '# droplet-bootstrap: mise' "$DEMO_HOME/.profile" 2>/dev/null; then
+  printf '\n# droplet-bootstrap: mise\nexport PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH"\n' >> "$DEMO_HOME/.profile"
+  chown "$DEMO_USER:$DEMO_GROUP" "$DEMO_HOME/.profile"
+fi
+
+log "installing with mise: $MISE_TOOLS"
+as_demo "$MISE_BIN use --global --yes $MISE_TOOLS" >/dev/null
 
 # --------------------------------------------------------------------------
 # 3a. Docker Engine + Compose plugin
@@ -249,6 +284,8 @@ cat <<EOF
   user:       $DEMO_USER  (passwordless sudo)
   home:       $DEMO_HOME
   gh:         $(gh --version 2>/dev/null | head -1 || echo "not installed")
+  node:       $(as_demo "$MISE_BIN exec -- node --version" 2>/dev/null || echo "not installed")  (via mise, demo user only)
+  mise tools: $MISE_TOOLS
   runtime:    $RUNTIME
   docker:     $(command -v docker &>/dev/null && docker --version 2>/dev/null || echo "not installed")
   compose:    $(docker compose version 2>/dev/null || echo "not installed")

@@ -1,6 +1,7 @@
 ---
 name: droplet-bootstrap
-description: Bootstrap a fresh DigitalOcean droplet (or any Ubuntu/Debian VM) for demos from the root user's workspace — create the demo user with a home directory, passwordless sudo and SSH access, install the GitHub CLI, then install either k3s (only if no Kubernetes is already present) or Docker + Docker Compose, after asking which the user wants. Use when the user wants to set up, provision, prepare or bootstrap a new droplet, VM or demo box, add a demo user, or get k3s, Kubernetes, Docker or Docker Compose onto a server.
+version: 1.0.0
+description: Bootstrap a fresh DigitalOcean droplet (or any Ubuntu/Debian VM) for demos from the root user's workspace — create the demo user with a home directory, passwordless sudo and SSH access, install the GitHub CLI and Node.js LTS (via mise, plus Go or other tools on request), then install either k3s (only if no Kubernetes is already present) or Docker + Docker Compose, after asking which the user wants. Use when the user wants to set up, provision, prepare or bootstrap a new droplet, VM or demo box, add a demo user, or get k3s, Kubernetes, Docker or Docker Compose onto a server.
 user-invocable: true
 argument-hint: "[k3s|docker|both|none] [username]"
 ---
@@ -27,7 +28,9 @@ Unless the user already said, ask with AskUserQuestion. The options are:
 | Both | `both` | Both of the above |
 | Neither | `none` | Only the demo user |
 
-Also confirm the username if they mentioned something other than `demo`.
+Also confirm the username if they mentioned something other than `demo`, and
+whether they want language tools besides Node.js LTS (for example Go). Pass
+those as `MISE_TOOLS`.
 
 ## Step 2: Run the script as root
 
@@ -41,6 +44,8 @@ Also confirm the username if they mentioned something other than `demo`.
   1–3 minutes.
 - Other flags: `--no-ssh-keys` (don't copy root's authorized_keys).
   Env `K3S_VERSION=v1.xx.y+k3s1` pins the k3s version.
+  Env `MISE_TOOLS="node@lts go@latest"` picks the tools mise installs
+  (default `node@lts`), and `MISE_VERSION` pins the mise release.
 
 ## What the script does
 
@@ -51,11 +56,18 @@ Also confirm the username if they mentioned something other than `demo`.
 2. Installs the **GitHub CLI** (`gh`) from GitHub's official apt repo every
    time, whatever runtime is chosen. It does not log in. The demo user runs
    `gh auth login` when they need it.
-3. **docker**: adds Docker's official apt repo, installs `docker-ce` and
+3. Installs **mise** for the demo user (`~/.local/bin/mise`), then runs
+   `mise use --global` for `MISE_TOOLS` (default `node@lts`). Tools live in
+   the user's home, so `npm i -g` and `go install` work without sudo. Only
+   the demo user gets them. Root doesn't. `~/.bashrc` runs `mise activate`
+   and `~/.profile` puts the shims on `PATH`. A non-interactive
+   `ssh demo@<ip> node` sees neither, so use `~/.local/bin/mise exec -- node`
+   there.
+4. **docker**: adds Docker's official apt repo, installs `docker-ce` and
    `docker-compose-plugin`, enables the service, and adds the user to the
    `docker` group. If Docker is already installed, it only adds Compose if
    missing.
-4. **k3s**: checks for an existing Kubernetes (k3s, rke2, microk8s, k0s,
+5. **k3s**: checks for an existing Kubernetes (k3s, rke2, microk8s, k0s,
    kubelet or kubeadm binaries or systemd units, or a cluster `kubectl` can
    reach). Only if none is found does it install k3s. It then waits for the
    node to be `Ready`, copies the kubeconfig to `/home/<user>/.kube/config`,
@@ -70,6 +82,7 @@ user's home directory.
 
 ```bash
 su - demo -c 'whoami && sudo -n true && echo sudo-ok && gh --version'
+su - demo -c 'mise ls && node --version && npm --version'
 su - demo -c 'docker compose version && docker ps'   # docker / both
 su - demo -c 'kubectl get nodes'                      # k3s / both
 ```
@@ -89,5 +102,9 @@ sets up k3s's config.
   hasn't taken effect yet. Use a fresh login (`su - demo` or a new SSH session).
 - `no /root/.ssh/authorized_keys` → the droplet was created without an SSH
   key. Set a password with `passwd demo` or add a key by hand.
+- `node: command not found` as the demo user → the shell predates the
+  bootstrap. Open a new login shell, or run `eval "$(~/.local/bin/mise activate bash)"`.
+- To add a tool later, the demo user runs `mise use -g go@latest`. No root
+  needed.
 - The script opens no firewall ports. Port 6443 (Kubernetes API) stays
   closed, so use `kubectl` on the box or over an SSH tunnel.
