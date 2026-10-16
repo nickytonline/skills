@@ -30,6 +30,20 @@ Creates ready-to-paste copy for X/Twitter, LinkedIn, YouTube Shorts, and TikTok.
 - Produces a concise TikTok caption with relevant hashtags.
 - Preserves uncertainty and avoids hardening rough transcript estimates into factual claims.
 
+### droplet-bootstrap
+
+**OpenClaw:** triggers automatically when provisioning a new droplet, VM or demo box
+**Claude Code:** `/droplet-bootstrap [k3s|docker|both|none] [username]`
+
+Prepares a fresh DigitalOcean droplet (or any Ubuntu/Debian VM) for demos, run as root on the box itself. Key behaviors:
+
+- Asks which runtime to install (k3s, Docker + Compose, both, or neither) unless already specified.
+- Creates a demo user (default `demo`) with a home directory, passwordless sudo, and root's SSH authorized_keys.
+- Always installs the GitHub CLI without logging in.
+- Installs k3s only if no Kubernetes is already present, then sets up the demo user's kubeconfig and a `k` alias.
+- Is idempotent, so it can be rerun to add a runtime later.
+- Intended for disposable demo VMs only, not production servers.
+
 ### excaliclaw
 
 **OpenClaw:** triggers automatically on diagram requests, e.g. `architecture diagram of my API`
