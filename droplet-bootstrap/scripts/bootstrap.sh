@@ -261,12 +261,24 @@ if [[ $WANT_K3S -eq 1 ]]; then
     install_user_kubeconfig
   fi
 
-  # Shell conveniences for kubectl.
-  if command -v kubectl &>/dev/null && ! grep -q '# droplet-bootstrap' "$DEMO_HOME/.bashrc" 2>/dev/null; then
-    log "adding kubectl alias + completion to $DEMO_HOME/.bashrc"
+  # Point kubectl at the demo user's kubeconfig. Without KUBECONFIG, k3s's
+  # bundled kubectl reads the root-only /etc/rancher/k3s/k3s.yaml and fails.
+  if [[ -f "$DEMO_HOME/.kube/config" ]] \
+     && ! grep -qx '# droplet-bootstrap: kubeconfig' "$DEMO_HOME/.profile" 2>/dev/null; then
+    log "exporting KUBECONFIG in $DEMO_HOME/.profile"
+    printf '\n# droplet-bootstrap: kubeconfig\nexport KUBECONFIG="$HOME/.kube/config"\n' >> "$DEMO_HOME/.profile"
+    chown "$DEMO_USER:$DEMO_GROUP" "$DEMO_HOME/.profile"
+  fi
+
+  # Shell conveniences for kubectl. Match the exact marker line: other steps
+  # write their own "# droplet-bootstrap: ..." markers to .bashrc.
+  if command -v kubectl &>/dev/null \
+     && ! grep -qx '# droplet-bootstrap: kubectl' "$DEMO_HOME/.bashrc" 2>/dev/null; then
+    log "adding KUBECONFIG, kubectl alias + completion to $DEMO_HOME/.bashrc"
     cat >> "$DEMO_HOME/.bashrc" <<'EOF'
 
-# droplet-bootstrap
+# droplet-bootstrap: kubectl
+[ -f "$HOME/.kube/config" ] && export KUBECONFIG="$HOME/.kube/config"
 if command -v kubectl >/dev/null 2>&1; then
   source <(kubectl completion bash)
   alias k=kubectl

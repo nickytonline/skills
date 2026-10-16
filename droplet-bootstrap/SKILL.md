@@ -1,6 +1,6 @@
 ---
 name: droplet-bootstrap
-version: 1.0.0
+version: 1.0.1
 description: Bootstrap a fresh DigitalOcean droplet (or any Ubuntu/Debian VM) for demos from the root user's workspace — create the demo user with a home directory, passwordless sudo and SSH access, install the GitHub CLI and Node.js LTS (via mise, plus Go or other tools on request), then install either k3s (only if no Kubernetes is already present) or Docker + Docker Compose, after asking which the user wants. Use when the user wants to set up, provision, prepare or bootstrap a new droplet, VM or demo box, add a demo user, or get k3s, Kubernetes, Docker or Docker Compose onto a server.
 user-invocable: true
 argument-hint: "[k3s|docker|both|none] [username]"
@@ -71,7 +71,10 @@ those as `MISE_TOOLS`.
    kubelet or kubeadm binaries or systemd units, or a cluster `kubectl` can
    reach). Only if none is found does it install k3s. It then waits for the
    node to be `Ready`, copies the kubeconfig to `/home/<user>/.kube/config`,
-   and adds `kubectl` completion and a `k` alias.
+   exports `KUBECONFIG` in `~/.profile` and `~/.bashrc`, and adds `kubectl`
+   completion and a `k` alias. k3s itself is system-wide on purpose (a root
+   systemd service, data in `/var/lib/rancher/k3s`). Only the kubeconfig
+   belongs to the demo user.
 
 It's safe to run again (it only fills in what's missing), so you can rerun it
 with `--runtime docker` later to add Docker to a k3s box. It does **not**
@@ -85,6 +88,7 @@ su - demo -c 'whoami && sudo -n true && echo sudo-ok && gh --version'
 su - demo -c 'mise ls && node --version && npm --version'
 su - demo -c 'docker compose version && docker ps'   # docker / both
 su - demo -c 'kubectl get nodes'                      # k3s / both
+su - demo -c 'bash -ic "type k"'                      # k3s / both: alias present
 ```
 
 Report the summary block the script printed. If it said "Kubernetes already
@@ -106,5 +110,8 @@ sets up k3s's config.
   bootstrap. Open a new login shell, or run `eval "$(~/.local/bin/mise activate bash)"`.
 - To add a tool later, the demo user runs `mise use -g go@latest`. No root
   needed.
+- `kubectl` as the demo user says `permission denied` on
+  `/etc/rancher/k3s/k3s.yaml` → `KUBECONFIG` isn't set in that shell. Start
+  a new login shell, or `export KUBECONFIG=~/.kube/config`.
 - The script opens no firewall ports. Port 6443 (Kubernetes API) stays
   closed, so use `kubectl` on the box or over an SSH tunnel.
