@@ -12,6 +12,7 @@ My personal agent skills.
 | [droplet-bootstrap](droplet-bootstrap/SKILL.md) | Bootstrap a fresh DigitalOcean droplet or Ubuntu/Debian VM for demos: a demo user with passwordless sudo, the GitHub CLI, Node.js LTS via mise, and k3s or Docker + Compose. |
 | [excaliclaw](excaliclaw/SKILL.md) | Create reliable Excalidraw diagrams via the Excalidraw MCP, with export-safe labels, Excalifont text, and clear system-diagram structure. |
 | [mergiraf](mergiraf/SKILL.md) | Resolve Git conflicts with Mergiraf as a deterministic first pass, then use agent reasoning only for conflicts that remain. |
+| [windows-vm-macos](windows-vm-macos/SKILL.md) | Set up a Windows 11 ARM VM on an Apple Silicon Mac with UTM, drive it from the CLI with utmctl, and keep a clean reset copy. |
 
 ## Usage
 

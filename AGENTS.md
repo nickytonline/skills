@@ -60,6 +60,17 @@ Creates Excalidraw diagrams via the Excalidraw MCP that survive OpenClaw renderi
 
 See [`excaliclaw/SKILL.md`](excaliclaw/SKILL.md) for the full spec including element recipes, routing patterns, and fallback rules.
 
+### windows-vm-macos
+
+**OpenClaw:** triggers automatically when a Windows machine is needed on macOS to test or try anything
+**Claude Code:** `/windows-vm-macos`
+
+Sets up a Windows 11 ARM VM on an Apple Silicon Mac with UTM, driven entirely from the CLI. Key behaviors:
+
+- Runs numbered scripts in `scripts/` (preflight, create VM, wait for guest agent, clean reset, build) sharing `lib.sh` and `guest.sh` helpers.
+- Controls the VM with `utmctl` and keeps a clean reset copy to restore between runs.
+- Provides a guest helper (`guest.sh`) to run commands in the VM and copy files to and from it, for running and testing anything on Windows.
+
 ## Commits
 
 Use [Conventional Commits](https://www.conventionalcommits.org/) for all commit messages, e.g. `feat(excaliclaw): add arrow routing recipes` or `fix(excaliclaw): strip cameraUpdate before export`.
