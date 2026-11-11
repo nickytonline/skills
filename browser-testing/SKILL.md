@@ -1,6 +1,7 @@
 ---
 name: browser-testing
 description: Test and debug web interfaces with browser automation while minimizing context and token use. Use for frontend implementation, interaction checks, responsive testing, accessibility checks, visual verification, browser debugging, or requests to inspect a running web app. Prefer Playwright MCP for normal navigation and functional verification; use Chrome DevTools MCP only when low-level browser diagnostics are required.
+version: 1.0.0
 ---
 
 # Browser Testing
